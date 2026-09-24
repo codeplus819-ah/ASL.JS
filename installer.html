@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ASL.js Installer</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      padding: 20px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      font-family: system-ui, sans-serif;
+      font-size: 15px;
+      color: #1d1d1f;
+    }
+    
+    h1 { padding: 10px; font-size: 22px; }
+    
+    fieldset {
+      width: 90%;
+      max-width: 500px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 16px;
+    }
+    
+    legend {
+      font-weight: 600;
+      padding: 0 8px;
+      color: #555;
+    }
+    
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 12px;
+    }
+    
+    label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #333;
+    }
+    
+    label span { color: #d33; }
+    
+    input, select, textarea {
+      padding: 8px 12px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+    }
+    
+    input:focus, select:focus, textarea:focus {
+      border-color: #0071e3;
+      box-shadow: 0 0 0 3px rgba(0,113,227,0.1);
+    }
+    
+    input[type="color"] {
+      width: 60px;
+      height: 38px;
+      padding: 2px;
+      cursor: pointer;
+    }
+    
+    textarea { resize: vertical; min-height: 60px; }
+    
+    button {
+      width: 90%;
+      max-width: 500px;
+      padding: 12px;
+      background: #0071e3;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    
+    button:hover { background: #0060c0; }
+    
+    .notice {
+      width: 90%;
+      max-width: 500px;
+      font-size: 13px;
+      color: #6e6e73;
+      text-align: center;
+    }
+    
+    .notice span { color: #d33; font-weight: 600; }
+    #toast{
+      display: none;
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1d1d1f;
+      color: white;
+      padding: 14px 18px;
+      border-radius: 10px;
+      display: none;
+      gap: 10px;
+      align-items: center;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      z-index: 999;
+    }
+  </style>
+</head>
+<body>
+  <div id="toast">
+    <span>Files ready:</span>
+    <button id="dlManifest">manifest.json</button>
+    <button id="dlSw">sw.js</button>
+  </div>
+  <h1>ASL.js PWA Installer</h1>
+
+  <fieldset>
+    <legend>Basic Info</legend>
+    
+    <div class="field">
+      <label for="name">Name <span>*</span></label>
+      <input id="name" type="text" value="My App">
+    </div>
+    
+    <div class="field">
+      <label for="shortName">Short Name</label>
+      <input id="shortName" type="text" value="App">
+    </div>
+    
+    <div class="field">
+      <label for="description">Description</label>
+      <textarea id="description" rows="2"></textarea>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Appearance</legend>
+    
+    <div class="field">
+      <label for="themeColor">Theme Color <span>*</span></label>
+      <input id="themeColor" type="color" value="#000000">
+    </div>
+    
+    <div class="field">
+      <label for="backgroundColor">Background Color</label>
+      <input id="backgroundColor" type="color" value="#ffffff">
+    </div>
+    
+    <div class="field">
+      <label for="display">Display</label>
+      <select id="display">
+        <option value="standalone" selected>standalone</option>
+        <option value="fullscreen">fullscreen</option>
+        <option value="minimal-ui">minimal-ui</option>
+        <option value="browser">browser</option>
+      </select>
+    </div>
+    
+    <div class="field">
+      <label for="startURL">Start URL</label>
+      <input id="startURL" type="text" value="/">
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Icons</legend>
+    
+    <div class="field">
+      <label for="icon192">Icon 192 Path <span>*</span></label>
+      <input id="icon192" type="text" value="/icons/icon-192.png">
+    </div>
+    
+    <div class="field">
+      <label for="icon512">Icon 512 Path</label>
+      <input id="icon512" type="text" value="/icons/icon-512.png">
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Cache</legend>
+    
+    <div class="field">
+      <label for="version">Version</label>
+      <input id="version" type="text" value="v1">
+    </div>
+    
+    <div class="field">
+      <label for="cacheName">Cache Name</label>
+      <input id="cacheName" type="text" value="cache-v1">
+    </div>
+    
+    <div class="field">
+      <label for="cacheAssets">Cache Assets</label>
+      <textarea id="cacheAssets" rows="3">/
+/index.html</textarea>
+    </div>
+  </fieldset>
+
+  <p class="notice">Fields marked with <span>*</span> are required.</p>
+  
+  <button id="install">Install PWA</button>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    function save(name, content) {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([content], { type: 'text/plain' }));
+      a.download = name;
+      a.click();
+    }
+
+    $('install').addEventListener('click', () => {
+      if (!$('name').value.trim()) return alert('Name is required.');
+      if (!$('icon192').value.trim()) return alert('Icon 192 is required.');
+
+      $('toast').style.display = 'flex';
+
+      $('dlManifest').onclick = () => {
+        save('manifest.json', JSON.stringify({
+          name: $('name').value,
+          short_name: $('shortName').value,
+          description: $('description').value,
+          start_url: $('startURL').value,
+          display: $('display').value,
+          background_color: $('backgroundColor').value,
+          theme_color: $('themeColor').value,
+          icons: [
+            { src: $('icon192').value, sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
+            { src: $('icon512').value, sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
+          ]
+        }, null, 2));
+      };
+
+      $('dlSw').onclick = () => {
+        const assets = $('cacheAssets').value.split('\n').map((s) => s.trim()).filter(Boolean);
+        save('sw.js', `const CACHE_NAME = '${$('cacheName').value}-${$('version').value}';
+  const ASSETS = ${JSON.stringify(assets, null, 2)};
+
+  self.addEventListener('install', (e) => {
+    e.waitUntil(caches.open(CACHE_NAME).then((c) => c.addAll(ASSETS)));
+    self.skipWaiting();
+  });
+
+  self.addEventListener('activate', (e) => {
+    e.waitUntil(caches.keys().then((keys) =>
+      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
+    ));
+    self.clients.claim();
+  });
+
+  self.addEventListener('fetch', (e) => {
+    e.respondWith(
+      caches.match(e.request).then((cached) => cached || fetch(e.request))
+    );
+  });
+  `);
+      };
+    });
+  </script>
+</body>
+</html>
