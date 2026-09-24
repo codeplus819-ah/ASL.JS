@@ -649,6 +649,6 @@ Since components are loaded using `fetch()`, the application should normally be 
 
 ASL.js is released under the **MIT License**.
 
-Copyright © 2026 ASL.js.
+Copyright (c) 2026 Amir Hosseyn Moeini (ASL.js)
 
 See [`LICENSE`](./LICENSE) for the complete license text.
